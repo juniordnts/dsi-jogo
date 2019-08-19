@@ -1,1 +1,3 @@
-# dsi-jogo
+# Desenvolvimento de sistemas para internet
+
+## Chuva de números
