@@ -1,0 +1,589 @@
+<!doctype html> 
+<html lang="en"> 
+<head> 
+    <meta charset="UTF-8" />
+    <title>Making your first Phaser 3 Game - Part 10</title>
+    <script src="assets/js/phaser.js"></script>
+    <style type="text/css">
+        body {
+            text-align: center;
+            background-color: rgb(163, 163, 163);
+        }
+        canvas {
+            position: absolute;
+            top: calc(50% - 250px);
+            left: calc(50% - 250px);
+        }
+    </style>
+</head>
+<body>
+    <script type="text/javascript">
+        
+        
+        
+        var player;
+        var stars;
+        var bombs;
+        var platforms;
+        var cursors;
+        var score = 0;
+        var gameOver = false;
+        var scoreText;
+        var operacao;
+        var valorX;
+        var valorY;
+        var resultado;
+        var numero = '';
+        var actualNumber;
+        var casas;
+        var numeroDeCasas;
+        var acertou;
+        
+        
+        
+        
+        
+        function addNumero(player, rain) {
+            if (numeroDeCasas == 1) {
+                if (actualNumber == resultado){
+                    displayAcertou()
+                } else {
+                    displayErrou()
+                }
+            } else {
+                numero += String(actualNumber);
+                console.log('numero',numero)
+                console.log('result',resultado)
+                casas.setText(numero + '-');
+                if (numero.length >= 2) {
+                    if (numero == resultado){
+                        numero = ''
+                        displayAcertou()
+                    } else {
+                        numero = ''
+                        displayErrou()
+                    }
+                }
+            }
+            rain.disableBody(true, true);
+            
+        }
+        
+        function displayAcertou() {
+            acertou.setText('ACERTOU');
+            casas.setText((resultado/10 < 1) ? '-' : '- -');
+            changeEquation()
+        }
+        
+        function displayErrou() {
+            acertou.setText('ERROU');
+            vidas -= 1;
+            casas.setText((resultado/10 < 1) ? '-' : '- -');
+            numeroDeVidas.setText(`Vidas: ${vidas}`)
+            changeEquation()
+            if (vidas == 0){
+                gameOver = true;
+            }
+        }
+        
+        function changeEquation(){
+            valorX = Phaser.Math.Between(0, 10)
+            valorY = Phaser.Math.Between(0, 10)
+            let aperacaoAgora = level;
+            level == 5 ? aperacaoAgora = Phaser.Math.Between(1, 4) : ''
+            switch (aperacaoAgora) {
+                case 1:
+                    resultado = valorX + valorY;
+                    operacao.setText(`${valorX} + ${valorY}`);
+                    break;
+                case 2:
+                    while ((valorX - valorY)<0){
+                        valorX = Phaser.Math.Between(0, 20)
+                        valorY = Phaser.Math.Between(0, 10)
+                    }
+                    resultado = valorX - valorY;
+                    operacao.setText(`${valorX} - ${valorY}`);
+                    break;
+                case 3:
+                    resultado = valorX * valorY;
+                    if (resultado == 100) {
+                        resultado -=1
+                        valorX -= 1
+                    }
+                    operacao.setText(`${valorX} * ${valorY}`);
+                    break;
+                case 4:
+                    while (!((valorX % valorY) == 0)){
+                        valorX = Phaser.Math.Between(0, 99)
+                        valorY = Phaser.Math.Between(0, 10)
+                    }
+                    resultado = valorX / valorY;
+                    operacao.setText(`${valorX} / ${valorY}`);
+                    break;
+            }
+            
+            // operacao.setText(`${valorX} + ${valorY}`);
+            calculaNumeroDeCasas()
+        }
+        
+        function calculaNumeroDeCasas() {
+            if (resultado/10 < 1 ){
+                casas.setText(' - ');
+                numeroDeCasas = 1;
+            } else {
+                casas.setText('- -');
+                numeroDeCasas = 2;
+            }
+        }
+        
+        function collectStar (player, star) {
+            star.disableBody(true, true);
+            
+            //  Add and update the score
+            // score += 10;
+            // scoreText.setText('Score: ' + score);
+            
+            if (stars.countActive(true) === 0)
+            {
+                //  A new batch of stars to collect
+                stars.children.iterate(function (child) {
+                    
+                    child.enableBody(true, child.x, 0, true, true);
+                    
+                });
+                
+                var x = (player.x < 400) ? Phaser.Math.Between(400, 800) : Phaser.Math.Between(0, 400);
+                
+                var bomb = bombs.create(x, 16, 'bomb');
+                bomb.setBounce(1);
+                bomb.setCollideWorldBounds(true);
+                bomb.setVelocity(Phaser.Math.Between(-200, 200), 20);
+                bomb.allowGravity = false;
+                
+            }
+        }
+
+        function realizaOperacao(v1, v2){
+            let aperacaoAgora = operacao
+            operacao == 5 ? operacao = Phaser.Math.Between(1, 4) : None
+            
+            switch (level) {
+                case 1:
+                    return v1 + v2;
+                    break;
+                case 2:
+                    return v1 - v2;
+                    break;
+                case 3:
+                    return v1 * v2;
+                    break;
+                case 4:
+                    return v1 / v2;
+                    break;
+            }
+        }
+        
+        // --------------------------------------------------------------------------------------
+
+        var coisa = 'q';
+        var bt1;
+        var bt2;
+        var bt3;
+        var bt4;
+        var btq;
+        var btw;
+        var bte;
+        var btr;
+        var btenter;
+        var personagem = 1;
+        var level = 1;
+        var mudou = 1;
+
+        var rodada = 0;
+        var restart = 0;
+        var interval;
+
+        var vidas;
+        var numeroDeVidas;
+
+        function zeraCor(){
+            bt1.setTint(0xffffff);
+            bt2.setTint(0xffffff);
+            bt3.setTint(0xffffff);
+            bt4.setTint(0xffffff);
+            btq.setTint(0xffffff);
+            btw.setTint(0xffffff);
+            bte.setTint(0xffffff);
+            btr.setTint(0xffffff);
+        }
+
+        // --------------------------------------------------------------------------------------
+
+        var Preloader = new Phaser.Class({
+
+            Extends: Phaser.Scene,
+            initialize:
+
+            function Preloader () {
+                Phaser.Scene.call(this, { key: 'preloader' });
+            },
+
+            preload: function () {
+                this.load.image('bg', 'assets/images/scene_menu.png');
+
+                this.load.image('b1', 'assets/images/menu/t1.png');
+                this.load.image('b2', 'assets/images/menu/t2.png');
+                this.load.image('b3', 'assets/images/menu/t3.png');
+                this.load.image('b4', 'assets/images/menu/t4.png');
+
+                this.load.image('bq', 'assets/images/menu/tq.png');
+                this.load.image('bw', 'assets/images/menu/tw.png');
+                this.load.image('be', 'assets/images/menu/te.png');
+                this.load.image('br', 'assets/images/menu/tr.png');
+                this.load.image('bt', 'assets/images/menu/tp.png');
+                this.load.image('enter', 'assets/images/menu/enter.png');
+            },
+
+            create: function () {
+                console.log('%c Preloader ', 'background: green; color: white; display: block;');
+                this.scene.start('menu');
+            }
+        });
+
+        // --------------------------------------------------------------------------------------
+
+        var Menu = new Phaser.Class( {
+            
+            Extends: Phaser.Scene,
+            initialize:
+            
+            function Menu () {
+                Phaser.Scene.call(this, 'menu');
+                window.MENU = this;
+            },
+            
+            create: function () {
+
+                this.add.image(270, 270, 'bg');
+
+                bt1 = this.add.image(108, 70, 'b1');
+                bt2 = this.add.image(216, 70, 'b2');
+                bt3 = this.add.image(324, 70, 'b3');
+                bt4 = this.add.image(432, 70, 'b4');
+
+                btq = this.add.image(90, 250, 'bq');
+                btw = this.add.image(180, 250, 'bw');
+                bte = this.add.image(270, 250, 'be');
+                btr = this.add.image(360, 250, 'br');
+                btt = this.add.image(450, 250, 'bt');
+
+                btenter = this.add.image(270, 480, 'enter');
+
+                // this.add.text(10, 10, 'Press 1, 2 or 3', { font: '16px Courier', fill: '#00ff00' });
+
+                this.input.keyboard.on('keyup_ONE', function () {
+                    personagem = 1;
+                    mudou = 1;
+                }, this);
+                this.input.keyboard.on('keyup_TWO', function () {
+                    personagem = 2;
+                    mudou = 1;
+                }, this);
+                this.input.keyboard.on('keyup_THREE', function () {
+                    personagem = 3;
+                    mudou = 1;
+                }, this);
+                this.input.keyboard.on('keyup_FOUR', function () {
+                    personagem = 4;
+                    mudou = 1;
+                }, this);
+                this.input.keyboard.on('keyup_Q', function () {
+                    level = 1;
+                    mudou = 1;
+                }, this);
+                this.input.keyboard.on('keyup_W', function () {
+                    level = 2;
+                    mudou = 1;
+                }, this);
+                this.input.keyboard.on('keyup_E', function () {
+                    level = 3;
+                    mudou = 1;
+                }, this);
+                this.input.keyboard.on('keyup_R', function () {
+                    level = 4;
+                    mudou = 1;
+                }, this);
+                this.input.keyboard.on('keyup_T', function () {
+                    level = 5;
+                    mudou = 1;
+                }, this);
+
+                this.input.keyboard.on('keyup_ENTER', function () {
+                    vidas = 1;
+                    gameOver = false;
+                    if (level && personagem){
+                        this.scene.start('jogo');
+                    }
+                }, this);
+                
+                this.events.on('shutdown', this.shutdown, this);
+            },
+
+            update: function() {
+                if (mudou){
+                    personagem == 1 ? bt1.setTint(0x6FA8DC) : bt1.setTint(0xffffff);
+                    personagem == 2 ? bt2.setTint(0x6FA8DC) : bt2.setTint(0xffffff);
+                    personagem == 3 ? bt3.setTint(0x6FA8DC) : bt3.setTint(0xffffff);
+                    personagem == 4 ? bt4.setTint(0x6FA8DC) : bt4.setTint(0xffffff);
+
+                    level == 1 ? btq.setTint(0x6FA8DC) : btq.setTint(0xffffff);
+                    level == 2 ? btw.setTint(0x6FA8DC) : btw.setTint(0xffffff);
+                    level == 3 ? bte.setTint(0x6FA8DC) : bte.setTint(0xffffff);
+                    level == 4 ? btr.setTint(0x6FA8DC) : btr.setTint(0xffffff);
+                    level == 5 ? btt.setTint(0x6FA8DC) : btt.setTint(0xffffff);
+                    mudou = 0;
+                }
+            },
+            
+            shutdown: function () {
+                this.input.keyboard.shutdown();
+            }
+            
+        });
+        
+        // --------------------------------------------------------------------------------------
+        
+        var Jogo = new Phaser.Class({
+            
+            Extends: Phaser.Scene,
+            initialize:
+            
+            function Jogo () {
+                Phaser.Scene.call(this, { key: 'jogo' });
+                window.GAME = this;
+            },
+            
+            init: function (data) {
+                // console.log('init', data);
+                this.imageID = data.id;
+                this.imageFile = data.image;
+            },
+            
+            preload: function () {
+                this.load.image('adicao', 'assets/images/scene_adicao.png');
+                this.load.image('subtracao', 'assets/images/scene_subtracao.png');
+                this.load.image('multiplicacao', 'assets/images/scene_multiplicacao.png');
+                this.load.image('divisao', 'assets/images/scene_divisao.png');
+                this.load.image('todas', 'assets/images/scene_todas.png');
+                
+                this.load.image('ground', 'assets/images/platform.png');
+                
+                this.load.spritesheet('dude', 'assets/dude.png', { frameWidth: 32, frameHeight: 48 });
+                
+                this.load.image('rain', 'assets/images/rain.png');
+                
+                this.load.image('n0', 'assets/images/numbers/number0.png');
+                this.load.image('n1', 'assets/images/numbers/number1.png');
+                this.load.image('n2', 'assets/images/numbers/number2.png');
+                this.load.image('n3', 'assets/images/numbers/number3.png');
+                this.load.image('n4', 'assets/images/numbers/number4.png');
+                this.load.image('n5', 'assets/images/numbers/number5.png');
+                this.load.image('n6', 'assets/images/numbers/number6.png');
+                this.load.image('n7', 'assets/images/numbers/number7.png');
+                this.load.image('n8', 'assets/images/numbers/number8.png');
+                this.load.image('n9', 'assets/images/numbers/number9.png');
+            },
+            
+            create: function () {
+
+                // switch (personagem) {
+                //     case 1:
+                //         console.log('teste')
+                //         break;
+                // }
+                switch (level) {
+                    case 1:
+                        this.add.image(270, 270, 'adicao');
+                        break;
+                    case 2:
+                        this.add.image(270, 270, 'subtracao');
+                        break;
+                    case 3:
+                        this.add.image(270, 270, 'multiplicacao');
+                        break;
+                    case 4:
+                        this.add.image(270, 270, 'divisao');
+                        break;
+                    case 5:
+                        this.add.image(270, 270, 'todas');
+                        break;
+                }
+                
+                
+                let particle = this.add.particles('rain');
+                particle.createEmitter({
+                    x: { min: 0, max: 540 },
+                    y: -50,
+                    scale: { start: 1, end: 0.6 },
+                    lifespan: 1800,
+                    quantity: 1,
+                    angle: { min: 0, max: 10 },
+                    gravityY: 400,
+                });
+                
+                platforms = this.physics.add.staticGroup();
+                platforms.create(270, 540, 'ground');
+                
+                rain = this.physics.add.group();
+                
+                player = this.physics.add.sprite(250, 250, 'dude');
+                player.setCollideWorldBounds(true);
+
+                if (!rodada){
+                    let animLeft = this.anims.create({
+                        key: 'left',
+                        frames: this.anims.generateFrameNumbers('dude', { start: 0, end: 3 }),
+                        frameRate: 10,
+                        repeat: -1
+                    });
+                    let animTurn = this.anims.create({
+                        key: 'turn',
+                        frames: [ { key: 'dude', frame: 4 } ],
+                        frameRate: 20
+                    });
+                    let animRight = this.anims.create({
+                        key: 'right',
+                        frames: this.anims.generateFrameNumbers('dude', { start: 5, end: 8 }),
+                        frameRate: 10,
+                        repeat: -1
+                    });
+                }
+                
+                cursors = this.input.keyboard.createCursorKeys();
+                
+                bombs = this.physics.add.group();
+                
+                // valorX = Phaser.Math.Between(0, 10)
+                // valorY = Phaser.Math.Between(0, 10)
+
+                // resultado = valorX + valorY;
+
+                operacao = this.add.text(16, 16, `${valorX} + ${valorY}`, { fontSize: '32px', fill: '#000' });
+
+                casas = this.add.text(400, 16, "", { fontSize: '32px', fill: '#000' });
+                changeEquation()
+                calculaNumeroDeCasas()
+
+                numeroDeVidas = this.add.text(16, 80, `Vidas: ${vidas}`, { fontSize: '32px', fill: '#000' });
+                
+                
+                this.physics.add.collider(player, platforms);
+                this.physics.add.collider(bombs, platforms);
+                
+                this.physics.add.overlap(player, stars, collectStar, null, this);
+                
+                acertou = this.add.text(16, 50, '', { fontSize: '32px', fill: '#000' });
+                
+                this.physics.add.overlap(player, rain, addNumero, null, this);
+                interval = setInterval(() => {
+                    let rand = Phaser.Math.Between(0, 9);
+                    actualNumber = rand
+                    let pos = Phaser.Math.Between(50, 450);
+                    rain.create(pos, 100, `n${rand}`);
+                }, 1500);
+
+                this.events.on('shutdown', this.shutdown, this);
+            },
+            
+            update: function () {
+                
+                if (cursors.left.isDown){
+                    player.setVelocityX(-300);
+                    player.anims.play('left', true);
+                }
+                else if (cursors.right.isDown){
+                    player.setVelocityX(300);
+                    player.anims.play('right', true);
+                }
+                else{
+                    player.setVelocityX(0);
+                    player.anims.play('turn');
+                }
+                
+                if (gameOver){
+                    cursors.left.isDown = false;
+                    cursors.right.isDown = false;
+                    clearInterval(interval)
+                    this.scene.start('perdeu');
+                }
+
+                if (cursors.up.isDown && player.body.touching.down){
+                    player.setVelocityY(-200);
+                }
+            },
+
+            shutdown: function () {
+                this.input.keyboard.shutdown();
+            }
+            
+        });
+        
+        // --------------------------------------------------------------------------------------
+
+        var Perdeu = new Phaser.Class({
+        
+            Extends: Phaser.Scene,
+            initialize:
+            
+            function Demo () {
+                Phaser.Scene.call(this, { key: 'perdeu' });
+                window.OVER = this;
+            },
+            
+            init: function (data) {
+                // console.log('init', data);
+                this.imageID = data.id;
+                this.imageFile = data.image;
+            },
+            
+            preload: function () {
+                this.load.image('bg', 'assets/images/scene_menu.png');
+            },
+            
+            create: function () {
+                rodada += 1
+                this.add.image(270, 270, 'bg').setTint(0xff0000);
+
+                this.input.keyboard.once('keyup_ENTER', function () {
+                    mudou = 1;
+                    this.scene.start('menu');
+                }, this);
+            },
+
+            shutdown: function () {
+                this.input.keyboard.shutdown();
+            }
+            
+        });
+
+        // --------------------------------------------------------------------------------------
+        
+        var config = {
+            type: Phaser.AUTO,
+            width: 540,
+            height: 540,
+            physics: {
+                default: 'arcade',
+                arcade: {
+                    gravity: { y: 400 },
+                    debug: false
+                }
+            },
+            scene: [ Preloader, Menu, Jogo, Perdeu ]
+        };
+
+        var game = new Phaser.Game(config);
+    </script>
+    
+</body>
+</html>

@@ -1,0 +1,293 @@
+<!doctype html> 
+<html lang="en"> 
+<head> 
+    <meta charset="UTF-8" />
+    <title>Making your first Phaser 3 Game - Part 10</title>
+    <script src="assets/js/phaser.js"></script>
+    <style type="text/css">
+        body {
+            text-align: center;
+            background-color: rgb(163, 163, 163);
+        }
+        canvas {
+            position: absolute;
+            top: calc(50% - 250px);
+            left: calc(50% - 250px);
+        }
+    </style>
+</head>
+<body>
+<script type="text/javascript">
+
+    var config = {
+        type: Phaser.AUTO,
+        width: 540,
+        height: 540,
+        physics: {
+            default: 'arcade',
+            arcade: {
+                gravity: { y: 400 },
+                debug: false
+            }
+        },
+        scene: {
+            preload: preload,
+            create: create,
+            update: update
+        }
+    };
+    
+    var player;
+    var stars;
+    var bombs;
+    var platforms;
+    var cursors;
+    var score = 0;
+    var gameOver = false;
+    var scoreText;
+    var operacao;
+    var valorX;
+    var valorY;
+    var resultado;
+    var numero = '';
+    var actualNumber;
+    var casas;
+    var numeroDeCasas;
+    var acertou;
+    
+    var game = new Phaser.Game(config);
+    
+    function preload () {
+        this.load.image('adicao', 'assets/images/scene_adicao.png');
+        this.load.image('divisao', 'assets/images/scene_divisao.png');
+        this.load.image('multiplicacao', 'assets/images/scene_multiplicacao.png');
+        this.load.image('subtracao', 'assets/images/scene_subtracao.png');
+        this.load.image('todas', 'assets/images/scene_todas.png');
+
+        this.load.image('ground', 'assets/images/platform.png');
+
+        this.load.spritesheet('dude', 'assets/dude.png', { frameWidth: 32, frameHeight: 48 });
+
+        this.load.image('rain', 'assets/images/rain.png');
+        // this.load.spritesheet('rain', 'assets/images/rain.png', { frameWidth: 17, frameHeight: 17 });
+
+
+        this.load.image('n0', 'assets/images/numbers/number0.png');
+        this.load.image('n1', 'assets/images/numbers/number1.png');
+        this.load.image('n2', 'assets/images/numbers/number2.png');
+        this.load.image('n3', 'assets/images/numbers/number3.png');
+        this.load.image('n4', 'assets/images/numbers/number4.png');
+        this.load.image('n5', 'assets/images/numbers/number5.png');
+        this.load.image('n6', 'assets/images/numbers/number6.png');
+        this.load.image('n7', 'assets/images/numbers/number7.png');
+        this.load.image('n8', 'assets/images/numbers/number8.png');
+        this.load.image('n9', 'assets/images/numbers/number9.png');
+    }
+    
+    function create () {
+
+        this.add.image(270, 270, 'subtracao');
+
+        let particle = this.add.particles('rain');
+        particle.createEmitter({
+            // frame: 0,
+            x: { min: 0, max: 540 },
+            y: -50,
+            // speedX: { min: 200, max: 400 },
+            scale: { start: 1, end: 0.6 },
+            lifespan: 1800,
+            quantity: 1,
+            // frequency: 80,
+            angle: { min: 0, max: 10 },
+            // speed: 200,
+            gravityY: 400,
+        });
+
+        // let coisa = this.add.image(270, 270, 'rain');
+        // coisa.alpha = 0.2
+
+        platforms = this.physics.add.staticGroup();
+        platforms.create(270, 540, 'ground');
+
+        rain = this.physics.add.group();
+    
+        player = this.physics.add.sprite(250, 250, 'dude');
+        player.setCollideWorldBounds(true);
+        this.anims.create({
+            key: 'left',
+            frames: this.anims.generateFrameNumbers('dude', { start: 0, end: 3 }),
+            frameRate: 10,
+            repeat: -1
+        });
+        this.anims.create({
+            key: 'turn',
+            frames: [ { key: 'dude', frame: 4 } ],
+            frameRate: 20
+        });
+        this.anims.create({
+            key: 'right',
+            frames: this.anims.generateFrameNumbers('dude', { start: 5, end: 8 }),
+            frameRate: 10,
+            repeat: -1
+        });
+    
+
+
+        cursors = this.input.keyboard.createCursorKeys();
+    
+        // stars = this.physics.add.group({
+        //     key: 'star',
+        //     repeat: 8,
+        //     setXY: { x: 50, y: 0, stepX: 50 }
+        // });
+        // stars.children.iterate(function (child) {
+            //  Give each star a slightly different bounce
+            // child.setBounceY(Phaser.Math.FloatBetween(0.1, 0.4));
+        // });
+    
+        bombs = this.physics.add.group();
+    
+
+        valorX = Phaser.Math.Between(0, 10)
+        valorY = Phaser.Math.Between(0, 10)
+        resultado = valorX + valorY;
+        operacao = this.add.text(16, 16, `${valorX} + ${valorY}`, { fontSize: '32px', fill: '#000' });
+
+        casas = this.add.text(400, 16, "", { fontSize: '32px', fill: '#000' });
+        calculaNumeroDeCasas()
+    
+        // this.physics.add.collider(stars, platforms);
+        this.physics.add.collider(player, platforms);
+        this.physics.add.collider(bombs, platforms);
+    
+        this.physics.add.overlap(player, stars, collectStar, null, this);
+        this.physics.add.collider(player, bombs, hitBomb, null, this);
+
+        acertou = this.add.text(16, 50, '', { fontSize: '32px', fill: '#000' });
+
+        // numero = this.add.text(200, 16, Phaser.Math.Between(0, 9), { fontSize: '32px', fill: '#000' });
+        this.physics.add.overlap(player, rain, addNumero, null, this);
+        setInterval(() => {
+            let rand = Phaser.Math.Between(0, 9);
+            actualNumber = rand
+            let pos = Phaser.Math.Between(50, 450);
+            rain.create(pos, 100, `n${rand}`);
+        }, 1500);
+    }
+    
+    function update (){
+        if (gameOver){
+            return;
+        }
+        if (cursors.left.isDown){
+            player.setVelocityX(-300);
+            player.anims.play('left', true);
+        }
+        else if (cursors.right.isDown){
+            player.setVelocityX(300);
+            player.anims.play('right', true);
+        }
+        else{
+            player.setVelocityX(0);
+            player.anims.play('turn');
+        }
+    
+        if (cursors.up.isDown && player.body.touching.down){
+            player.setVelocityY(-200);
+        }
+    }
+    
+    function addNumero(player, rain) {
+        if (numeroDeCasas == 1) {
+            if (actualNumber == resultado){
+                displayAcertou()
+            } else {
+                displayErrou()
+            }
+        } else {
+            numero += String(actualNumber);
+            console.log('numero',numero)
+            console.log('result',resultado)
+            casas.setText(numero + '-');
+            if (numero.length >= 2) {
+                if (numero == resultado){
+                    numero = ''
+                    displayAcertou()
+                } else {
+                    numero = ''
+                    displayErrou()
+                }
+            }
+        }
+        rain.disableBody(true, true);
+        
+    }
+
+    function displayAcertou() {
+        acertou.setText('ACERTOU');
+        casas.setText((resultado/10 < 1) ? '-' : '- -');
+        changeEquation()
+    }
+
+    function displayErrou() {
+        acertou.setText('ERROU');
+        casas.setText((resultado/10 < 1) ? '-' : '- -');
+        changeEquation()
+    }
+
+    function changeEquation(){
+        valorX = Phaser.Math.Between(0, 10)
+        valorY = Phaser.Math.Between(0, 10)
+        resultado = valorX + valorY;
+        operacao.setText(`${valorX} + ${valorY}`);
+        calculaNumeroDeCasas()
+    }
+
+    function calculaNumeroDeCasas() {
+        if (resultado/10 < 1 ){
+            casas.setText(' - ');
+            numeroDeCasas = 1;
+        } else {
+            casas.setText('- -');
+            numeroDeCasas = 2;
+        }
+    }
+
+    function collectStar (player, star) {
+        star.disableBody(true, true);
+    
+        //  Add and update the score
+        // score += 10;
+        // scoreText.setText('Score: ' + score);
+    
+        if (stars.countActive(true) === 0)
+        {
+            //  A new batch of stars to collect
+            stars.children.iterate(function (child) {
+    
+                child.enableBody(true, child.x, 0, true, true);
+    
+            });
+    
+            var x = (player.x < 400) ? Phaser.Math.Between(400, 800) : Phaser.Math.Between(0, 400);
+    
+            var bomb = bombs.create(x, 16, 'bomb');
+            bomb.setBounce(1);
+            bomb.setCollideWorldBounds(true);
+            bomb.setVelocity(Phaser.Math.Between(-200, 200), 20);
+            bomb.allowGravity = false;
+    
+        }
+    }
+    
+    function hitBomb (player, bomb) {
+        this.physics.pause();
+        player.setTint(0xff0000);
+        player.anims.play('turn');
+        gameOver = true;
+    }
+    
+</script>
+
+</body>
+</html>
